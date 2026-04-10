@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BK AutoSurvey</title>
+<style>
+ @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@300;400;500;700&display=swap');
+ :root {
+  --bg:#050505;
+  --bg-soft:#0b0f0b;
+  --surface:rgba(7, 14, 9, .86);
+  --surface2:rgba(10, 18, 12, .92);
+  --surface3:rgba(16, 25, 18, .94);
+  --border:#2de26d;
+  --border-soft:rgba(45, 226, 109, .22);
+  --text:#d2ffd8;
+  --muted:#77b488;
+  --accent:#2de26d;
+  --accent2:#ffb347;
+  --accent3:#66f7ff;
+  --danger:#ff5c8a;
+  --shadow:0 0 0 1px rgba(45,226,109,.15),0 0 20px rgba(45,226,109,.08),0 0 45px rgba(255,179,71,.04);
+ }
+ *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+ html{background:var(--bg)}
+ body{
+  background:
+   radial-gradient(circle at top, rgba(45,226,109,.08), transparent 42%),
+   linear-gradient(180deg, #060806 0%, #030403 100%);
+  color:var(--text);
+  font-family:'IBM Plex Mono', monospace;
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+  text-shadow:0 0 4px rgba(45,226,109,.15);
+ }
+ body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+   repeating-linear-gradient(180deg, rgba(255,255,255,.045) 0px, rgba(255,255,255,.045) 1px, transparent 1px, transparent 4px);
+  mix-blend-mode:soft-light;
+  pointer-events:none;
+  opacity:.14;
+  z-index:3;
+  animation:scanDrift 10s linear infinite;
+ }
+ body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+   radial-gradient(circle at center, transparent 50%, rgba(0,0,0,.42) 100%),
+   linear-gradient(90deg, rgba(102,247,255,.03), transparent 30%, transparent 70%, rgba(255,92,138,.03));
+  pointer-events:none;
+  z-index:3;
+ }
+ .ascii-noise{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+ .ascii-layer{
+  position:absolute;
+  inset:-12%;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  line-height:12px;
+  letter-spacing:1px;
+  white-space:pre;
+  opacity:.11;
+  user-select:none;
+  filter:drop-shadow(0 0 4px rgba(45,226,109,.18));
+ }
+ .ascii-layer.layer-1{color:rgba(45,226,109,.75); animation:asciiFloat1 18s linear infinite;}
+ .ascii-layer.layer-2{color:rgba(255,179,71,.45); animation:asciiFloat2 22s linear infinite; mix-blend-mode:screen;}
+ .ascii-layer.layer-3{color:rgba(102,247,255,.35); animation:asciiPulse 6s ease-in-out infinite;}
+ .wrapper{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:2.2rem 1.25rem 4rem}
+ header{
+  text-align:center;
+  margin-bottom:2.6rem;
+  padding:2.25rem 1.25rem 2rem;
+  border:1px solid var(--border-soft);
+  background:linear-gradient(180deg, rgba(6,13,8,.88), rgba(6,13,8,.52));
+  box-shadow:var(--shadow);
+  clip-path:polygon(0 14px,14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+ }
+ header::before{
+  content:'BOOTING //';
+  position:absolute;
+  top:.85rem;
+  left:50%;
+  transform:translateX(-50%);
+  color:rgba(255,179,71,.72);
+  font-size:.6rem;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  text-align:center;
+  width:100%;
+ }
+ header::after{
+  content:'+++++++++++++[ CRT MODE ENABLED ]+++++++++++++';
+  position:absolute;
+  left:50%;
+  bottom:.8rem;
+  transform:translateX(-50%);
+  color:rgba(45,226,109,.35);
+  font-size:.64rem;
+  letter-spacing:.12em;
+  white-space:nowrap;
+  text-align:center;
+ }
+ .logo-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.7rem;
+  background:linear-gradient(180deg, rgba(255,179,71,.12), rgba(255,179,71,.02));
+  color:var(--accent2);
+  border:1px solid rgba(255,179,71,.35);
+  font-family:'Press Start 2P', monospace;
+  font-size:.62rem;
+  letter-spacing:.12em;
+  padding:.75rem 1rem;
+  border-radius:0;
+  margin-bottom:1.25rem;
+  box-shadow:0 0 18px rgba(255,179,71,.12);
+  text-transform:uppercase;
+ }
+ h1{
+  position:relative;
+  display:inline-block;
+  text-align:center;
+  font-family:'Press Start 2P', monospace;
+  font-size:clamp(2.1rem,6vw,4.45rem);
+  line-height:1.15;
+  letter-spacing:.08em;
+  color:var(--accent);
+  text-transform:uppercase;
+  text-shadow:0 0 8px rgba(45,226,109,.38), 0 0 24px rgba(45,226,109,.16);
+  animation:textFlicker 3.4s steps(2, end) infinite;
+ }
+ h1::before,
+ h1::after{
+  content:attr(data-text);
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  white-space:pre;
+  overflow:hidden;
+ }
+ h1::before{
+  color:rgba(102,247,255,.75);
+  transform:translate(2px, -1px);
+  clip-path:polygon(0 0,100% 0,100% 42%,0 35%);
+  animation:glitchShift 1.8s infinite steps(2,end);
+ }
+ h1::after{
+  color:rgba(255,92,138,.7);
+  transform:translate(-2px, 1px);
+  clip-path:polygon(0 58%,100% 48%,100% 100%,0 100%);
+  animation:glitchShift2 2.4s infinite steps(2,end);
+ }
+ .subtitle{
+  text-align:center;
+  color:var(--muted);
+  font-size:.84rem;
+  margin-top:1rem;
+  font-weight:400;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+ }
+ .subtitle::before{content:'> '; color:var(--accent2)}
+ .card{
+  background:linear-gradient(180deg, rgba(8,15,10,.92), rgba(5,10,7,.9));
+  border:1px solid var(--border-soft);
+  border-left:3px solid var(--accent);
+  border-radius:0;
+  padding:1.55rem;
+  margin-bottom:1.15rem;
+  animation:fadeUp .5s ease both;
+  box-shadow:var(--shadow);
+  position:relative;
+  overflow:hidden;
+ }
+ .card::before{content:'[]';position:absolute;top:.85rem;right:1rem;color:rgba(45,226,109,.38);font-size:.7rem}
+ .card-title{
+  font-family:'Press Start 2P', monospace;
+  font-size:1rem;
+  letter-spacing:.05em;
+  color:var(--accent2);
+  margin-bottom:1.25rem;
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+  text-transform:uppercase;
+ }
+ .step-badge{
+  background:#071108;
+  color:var(--accent);
+  width:30px;
+  height:30px;
+  border-radius:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--accent);
+  box-shadow:0 0 10px rgba(45,226,109,.22);
+  font-size:.78rem;
+  font-weight:700;
+ }
+ .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+ @media(max-width:680px){
+  .form-grid{grid-template-columns:1fr}
+  .wrapper{padding:1.35rem .95rem 3rem}
+  .card{padding:1.2rem}
+  header::before,header::after{display:none}
+  h1::before,h1::after{display:none}
+ }
+ .full-width{grid-column:1/-1}
+ label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.55rem}
+ input[type=text],select{
+  width:100%;
+  background:var(--surface2);
+  border:1px solid rgba(45,226,109,.24);
+  border-radius:0;
+  color:var(--text);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:.92rem;
+  padding:.82rem .92rem;
+  outline:none;
+  transition:border-color .18s, box-shadow .18s, transform .18s;
+ }
+ input[type=text]::placeholder{color:rgba(119,180,136,.6)}
+ input[type=text]:focus,select:focus{
+  border-color:var(--accent2);
+  box-shadow:0 0 0 1px rgba(255,179,71,.16), 0 0 16px rgba(255,179,71,.08);
+  transform:translateX(2px);
+ }
+ select option{background:#111912;color:var(--text)}
+ .toggle-group{display:flex;gap:.55rem;margin-top:.25rem}
+ .toggle-btn,.rating-btn,.btn-copy,.btn-launch,.btn-generate{font-family:'Press Start 2P', monospace;text-transform:uppercase}
+ .toggle-btn{
+  flex:1;padding:.88rem .6rem;border-radius:0;border:1px solid rgba(45,226,109,.22);
+  background:var(--surface2);color:var(--muted);font-size:.67rem;cursor:pointer;transition:all .18s;text-align:center;position:relative;
+ }
+ .toggle-btn:hover{border-color:var(--accent2);color:var(--accent2);transform:translateY(-1px)}
+ .toggle-btn.active{background:linear-gradient(180deg, rgba(45,226,109,.15), rgba(45,226,109,.06));border-color:var(--accent);color:var(--accent);box-shadow:0 0 16px rgba(45,226,109,.12)}
+ .rating-row{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.3rem}
+ .rating-btn{width:40px;height:40px;border-radius:0;border:1px solid rgba(45,226,109,.22);background:var(--surface2);color:var(--muted);font-weight:700;font-size:.72rem;cursor:pointer;transition:all .15s}
+ .rating-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+ .rating-btn.active{background:rgba(45,226,109,.16);border-color:var(--accent);color:var(--accent)}
+ .bookmarklet-section{text-align:center;padding:1rem 0}
+ .bookmarklet-hint{font-size:.8rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.7}
+ .bookmarklet-hint strong{color:var(--accent2)}
+ #bookmarklet-link{
+  display:inline-block;background:linear-gradient(180deg, rgba(45,226,109,.15), rgba(45,226,109,.04));color:var(--accent);border:1px solid var(--accent);
+  box-shadow:0 0 0 1px rgba(45,226,109,.08), inset 0 0 15px rgba(45,226,109,.05), 0 0 24px rgba(45,226,109,.12);
+  font-family:'Press Start 2P', monospace;font-size:.88rem;letter-spacing:.08em;padding:1rem 1.6rem;border-radius:0;text-decoration:none;cursor:grab;
+  transition:transform .15s, box-shadow .15s, color .15s, border-color .15s;user-select:none;position:relative;
+ }
+ #bookmarklet-link::before{content:'>> '; color:var(--accent2)}
+ #bookmarklet-link:hover{transform:translateY(-2px) skewX(-2deg);box-shadow:0 0 30px rgba(45,226,109,.18);border-color:var(--accent2);color:var(--accent2)}
+ .drag-arrow{margin-top:.95rem;font-size:.76rem;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:.4rem;text-transform:uppercase;letter-spacing:.08em}
+ .code-box{
+  background:#040704;border:1px solid rgba(45,226,109,.24);border-radius:0;padding:1rem 1.2rem;font-family:'IBM Plex Mono', monospace;font-size:.74rem;
+  color:#9bd7a8;line-height:1.6;max-height:260px;overflow-y:auto;white-space:pre;box-shadow:inset 0 0 20px rgba(45,226,109,.03);
+ }
+ .code-box::-webkit-scrollbar{width:8px}
+ .code-box::-webkit-scrollbar-thumb{background:rgba(45,226,109,.24);border-radius:0}
+ .btn-copy{display:flex;align-items:center;gap:.55rem;background:var(--surface2);border:1px solid rgba(45,226,109,.24);color:var(--text);font-size:.64rem;padding:.8rem 1rem;border-radius:0;cursor:pointer;transition:border-color .2s,color .2s, transform .2s;margin-top:.9rem}
+ .btn-copy:hover{border-color:var(--accent2);color:var(--accent2);transform:translateX(2px)}
+ .btn-copy.copied{border-color:var(--accent);color:var(--accent)}
+ .btn-generate,.btn-launch{width:100%;padding:1rem;border-radius:0;font-size:.8rem;letter-spacing:.08em;cursor:pointer;transition:transform .15s, box-shadow .15s, border-color .15s, color .15s}
+ .btn-generate{background:linear-gradient(180deg, rgba(255,179,71,.16), rgba(255,179,71,.05));border:1px solid rgba(255,179,71,.5);color:var(--accent2);box-shadow:0 0 18px rgba(255,179,71,.08);margin-top:.5rem}
+ .btn-generate:hover{transform:translateY(-2px);box-shadow:0 0 24px rgba(255,179,71,.14);color:#ffe2bc}
+ .btn-launch{background:transparent;border:1px solid rgba(45,226,109,.16);color:rgba(119,180,136,.55);cursor:not-allowed}
+ .btn-launch:not(:disabled){border-color:var(--accent);color:var(--accent);cursor:pointer;animation:pulseBtn 1.8s ease-in-out infinite;box-shadow:0 0 20px rgba(45,226,109,.08)}
+ .btn-launch:not(:disabled):hover{background:rgba(45,226,109,.08);color:#f0fff3;transform:translateY(-2px);animation:none}
+ @keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 rgba(45,226,109,.0)}50%{box-shadow:0 0 0 6px rgba(45,226,109,.14)}}
+ .steps{list-style:none;counter-reset:steps}
+ .steps li{counter-increment:steps;display:flex;gap:.9rem;align-items:flex-start;padding:.95rem 0;border-bottom:1px dashed rgba(45,226,109,.16);font-size:.86rem;line-height:1.6;color:#badfc2}
+ .steps li:last-child{border-bottom:none}
+ .steps li::before{content:counter(steps, decimal-leading-zero);min-width:36px;height:28px;border-radius:0;background:#061109;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.74rem;flex-shrink:0;margin-top:.1rem;border:1px solid rgba(45,226,109,.28)}
+ kbd{background:#0a120c;border:1px solid rgba(255,179,71,.28);border-radius:0;padding:.16rem .42rem;font-size:.76rem;font-family:'IBM Plex Mono', monospace;color:var(--accent2);box-shadow:inset 0 0 0 1px rgba(255,179,71,.05)}
+ .result-hint{display:none;background:linear-gradient(180deg, rgba(255,179,71,.1), rgba(255,179,71,.03));border:1px solid rgba(255,179,71,.35);border-left:3px solid var(--accent2);border-radius:0;padding:1.1rem 1.4rem;margin-bottom:1.15rem;text-align:center;animation:fadeUp .4s ease both;box-shadow:0 0 18px rgba(255,179,71,.05)}
+ .result-hint p{font-size:.84rem;color:var(--muted);line-height:1.7}
+ .result-hint strong{color:#ffe3a7}
+ .info-box{background:linear-gradient(180deg, rgba(102,247,255,.06), rgba(102,247,255,.02));border:1px solid rgba(102,247,255,.18);border-left:3px solid var(--accent3);border-radius:0;padding:1rem 1.2rem;margin-bottom:1rem;font-size:.82rem;color:#9cdce0;line-height:1.7}
+ .info-box strong{color:var(--accent3)}
+ footer{text-align:center;margin-top:2.5rem;color:rgba(119,180,136,.55);font-size:.72rem;opacity:.9;text-transform:uppercase;letter-spacing:.12em}
+ .ascii-signature{text-align:center;align-self:center;margin-top:.9rem;color:rgba(45,226,109,.38);font-size:.64rem;line-height:1.35;white-space:pre}
+ @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+ @keyframes scanDrift{from{transform:translateY(0)}to{transform:translateY(12px)}}
+ @keyframes textFlicker{0%,19%,21%,23%,80%,100%{opacity:1}20%,22%,79%{opacity:.72}}
+ @keyframes glitchShift{0%,100%{transform:translate(2px,-1px)}20%{transform:translate(-2px,1px)}40%{transform:translate(4px,-2px)}60%{transform:translate(-4px,2px)}80%{transform:translate(1px,-1px)}}
+ @keyframes glitchShift2{0%,100%{transform:translate(-2px,1px)}25%{transform:translate(1px,-1px)}50%{transform:translate(-4px,2px)}75%{transform:translate(4px,-2px)}}
+ @keyframes asciiFloat1{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(-1.5%,1.2%,0)}100%{transform:translate3d(0,0,0)}}
+ @keyframes asciiFloat2{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(1.25%,-1.2%,0)}100%{transform:translate3d(0,0,0)}}
+ @keyframes asciiPulse{0%,100%{opacity:.08}50%{opacity:.16}}
+</style>
+</head>
+<body>
+<div class="ascii-noise" aria-hidden="true">
+ <pre class="ascii-layer layer-1" id="ascii-layer-1"></pre>
+ <pre class="ascii-layer layer-2" id="ascii-layer-2"></pre>
+ <pre class="ascii-layer layer-3" id="ascii-layer-3"></pre>
+</div>
+<div class="wrapper">
+  <header>
+    <div class="logo-badge">🍔 BURGER KING FR</div>
+    <h1 data-text="BK AUTO\A SURVEY"><span>BK AUTO</span><br><span>SURVEY</span></h1>
+    <p class="subtitle">Remplit le sondage automatiquement &amp; affiche votre code de réduction</p>
+  </header>
+
+  <div class="card">
+    <div class="card-title"><span class="step-badge">1</span> Informations de visite</div>
+    <div class="form-grid">
+      <div>
+        <label>Numéro de restaurant</label>
+        <input type="text" id="cfg-resto" value="23416" placeholder="ex: 23416">
+      </div>
+      <div>
+        <label>Date de visite (jj/mm/aaaa)</label>
+        <input type="text" id="cfg-date" placeholder="ex: 26/03/2025">
+      </div>
+      <div>
+        <label>Heure (1–12)</label>
+        <select id="cfg-hour">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+          <option value="10">10</option><option value="11">11</option><option value="12" selected>12</option>
+        </select>
+      </div>
+      <div>
+        <label>Minutes</label>
+        <select id="cfg-min">
+          <option value="1">00</option><option value="2">05</option><option value="3">10</option>
+          <option value="4">15</option><option value="5">20</option><option value="6">25</option>
+          <option value="7" selected>30</option><option value="8">35</option><option value="9">40</option>
+          <option value="10">45</option><option value="11">50</option><option value="12">55</option>
+        </select>
+      </div>
+      <div class="full-width">
+        <label>Période</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" onclick="setPeriod('1',this)">☀️ MATIN</button>
+          <button class="toggle-btn"        onclick="setPeriod('2',this)">🌤️ APRÈS-MIDI</button>
+        </div>
+      </div>
+      <div class="full-width">
+        <label>Commentaire libre (min. 3 phrases)</label>
+        <input type="text" id="cfg-comment" value="Très bon repas, service rapide et accueillant. Les burgers étaient chauds et savoureux. Je reviendrai sans hésiter.">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:.5rem">
+      <button class="btn-generate" style="margin-top:0" onclick="generate()">⚡ GÉNÉRER</button>
+      <button class="btn-launch" id="btn-launch" onclick="launch()" disabled>🚀 LANCER</button>
+    </div>
+  </div>
+
+  <div class="result-hint" id="result-hint">
+    <p>🎟️ À la fin du sondage, <strong>une fenêtre affichera votre code</strong>.<br>
+    Un panneau de suivi s'affichera en bas à droite de la page Qualtrics.</p>
+  </div>
+
+  <div class="card" id="card-bookmark" style="display:none">
+    <div class="card-title"><span class="step-badge">2</span> Bookmarklet</div>
+    <div class="info-box">
+      ⚠️ Ouvrez directement l'URL Qualtrics dans un onglet :<br>
+      <strong>https://rbixm.qualtrics.com/jfe/form/SV_9MHgHFvPm0OEHr0?CountryCode=FRA&amp;Q_Language=FR&amp;PT=1</strong>
+    </div>
+    <div class="bookmarklet-section">
+      <p class="bookmarklet-hint"><strong>Glissez</strong> ce bouton dans votre barre de favoris, puis cliquez dessus depuis la page Qualtrics.</p>
+      <a id="bookmarklet-link" href="#" draggable="true">🍔 BK AutoFill</a>
+      <div class="drag-arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        Glisser vers la barre de favoris
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-console" style="display:none">
+    <div class="card-title"><span class="step-badge">3</span> Console navigateur</div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:.8rem;">Sur la page Qualtrics : <kbd>F12</kbd> → <strong>Console</strong> → coller → <kbd>Entrée</kbd></p>
+    <div class="code-box" id="code-preview">// Cliquez sur Générer ci-dessus</div>
+    <button class="btn-copy" id="btn-copy" onclick="copyCode()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copier le script
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Mode d'emploi</div>
+    <ol class="steps">
+      <li>Remplissez le formulaire et cliquez sur <strong>"Générer"</strong>.</li>
+      <li>Ouvrez <strong>l'URL Qualtrics directement</strong> dans un onglet.</li>
+      <li><strong>Méthode A :</strong> glissez le bouton orange dans vos favoris, cliquez dessus depuis Qualtrics.</li>
+      <li><strong>Méthode B :</strong> <kbd>F12</kbd> → Console → collez le script → <kbd>Entrée</kbd>.</li>
+      <li>Un <strong>panneau de suivi</strong> apparaît en bas à droite — il montre chaque étape en direct.</li>
+      <li>🎟️ Le code s'affiche automatiquement à la fin dans une grande fenêtre.</li>
+    </ol>
+  </div>
+
+  <footer>Outil non officiel — usage personnel uniquement</footer>
+</div>
+
+<script>
+(function(){
+ const IDs = ['ascii-layer-1','ascii-layer-2','ascii-layer-3'];
+ const CHARSETS = [
+  '@#$%&*+=-:. /\\[]{}<>01',
+  '░▒▓█/\\|_-+=*~^',
+  '01BKCRT<>[]{}##**..'
+ ];
+ function frame(width, height, chars, step){
+  let out = [];
+  for(let y=0; y<height; y++){
+   let row = '';
+   for(let x=0; x<width; x++){
+    const wave = Math.sin((x + step) * 0.18) + Math.cos((y * 1.7 + step) * 0.21);
+    const idx = Math.abs(Math.floor((wave * 100 + x * 7 + y * 13 + step) % chars.length));
+    row += chars[idx];
+   }
+   out.push(row);
+  }
+  return out.join('\n');
+ }
+ let tick = 0;
+ function paint(){
+  const width = Math.max(44, Math.min(132, Math.floor(window.innerWidth / 12)));
+  const height = Math.max(26, Math.min(62, Math.floor(window.innerHeight / 16)));
+  IDs.forEach((id, i) => {
+   const el = document.getElementById(id);
+   if(el){ el.textContent = frame(width, height, CHARSETS[i], tick + i * 13); }
+  });
+  tick += 1;
+ }
+ window.addEventListener('resize', paint);
+ window.addEventListener('load', paint);
+ paint();
+ setInterval(paint, 220);
+})();
+</script>
+<script>
+let selectedPeriod = '1';
+function setPeriod(val, btn) {
+  selectedPeriod = val;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function buildScript(cfg) {
+  // Le script est une IIFE construite comme tableau de strings
+  // pour éviter les problèmes de backticks imbriqués
+  const S = JSON.stringify(cfg);
+
+  return [
+'(async function BKAutoSurvey(){',
+'const D='+S+';',
+'const wait=ms=>new Promise(r=>setTimeout(r,ms));',
+
+// ══════════════════════════════════════════════════════
+// PANNEAU DE DEBUG FLOTTANT
+// Apparaît en bas à droite de la page Qualtrics
+// Montre la page courante + log en temps réel
+// ══════════════════════════════════════════════════════
+'const PNL=(()=>{',
+'  const d=document.createElement("div");',
+'  d.id="__bkpanel__";',
+'  Object.assign(d.style,{',
+'    position:"fixed",bottom:"16px",right:"16px",zIndex:"2147483646",',
+'    width:"340px",background:"#111",border:"2px solid #FF6B00",',
+'    borderRadius:"12px",fontFamily:"monospace",fontSize:"12px",',
+'    color:"#ccc",boxShadow:"0 4px 30px rgba(255,107,0,.5)",',
+'    overflow:"hidden",transition:"opacity .3s"',
+'  });',
+'  d.innerHTML=',
+'    \'<div id="__bkhd__" style="background:#FF6B00;color:#111;font-weight:700;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;font-family:sans-serif;font-size:13px;letter-spacing:.05em;">\'',
+'    +\'<span>🍔 BK AutoSurvey</span>\'',
+'    +\'<button id="__bkclose__" style="background:none;border:none;color:#111;font-size:18px;cursor:pointer;line-height:1;padding:0 2px;">✕</button>\'',
+'    +\'</div>\'',
+'    +\'<div id="__bkst__" style="padding:8px 12px;color:#F5EB00;font-size:13px;font-family:sans-serif;font-weight:600;border-bottom:1px solid #222;min-height:34px;">⏳ Démarrage...</div>\'',
+'    +\'<div id="__bklog__" style="padding:6px 10px;max-height:200px;overflow-y:auto;line-height:1.7;"></div>\';',
+'  document.body.appendChild(d);',
+'  document.getElementById("__bkclose__").onclick=()=>d.remove();',
+'  return{',
+'    status(t,color){',
+'      const el=document.getElementById("__bkst__");',
+'      if(el){el.textContent=t;el.style.color=color||"#F5EB00";}',
+'    },',
+'    log(t,color){',
+'      const el=document.getElementById("__bklog__");',
+'      if(!el)return;',
+'      const row=document.createElement("div");',
+'      row.style.cssText="padding:1px 2px;border-bottom:1px solid #1c1c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";',
+'      row.style.color=color||"#aaa";',
+'      const time=new Date().toLocaleTimeString("fr",{hour:"2-digit",minute:"2-digit",second:"2-digit"});',
+'      row.title=time+" "+t;',
+'      row.textContent=time+" "+t;',
+'      el.appendChild(row);',
+'      el.scrollTop=el.scrollHeight;',
+'    },',
+'    done(code){',
+'      if(code){',
+'        this.status("✅ CODE : "+code,"#4ade80");',
+'        this.log("🎟️ "+code,"#F5EB00");',
+'      }else{',
+'        this.status("⚠️ Aucun code trouvé","#f87171");',
+'        this.log("Page finale atteinte sans code","#f87171");',
+'      }',
+'    }',
+'  };',
+'})();',
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+'function log(m,c){console.log("%c BK %c "+m,"background:#FF6B00;color:#111;font-weight:700;padding:2px 6px;border-radius:4px","color:#aaa");PNL.log(m,c);}',
+
+'function setInput(id,val){',
+'  const el=document.getElementById(id);',
+'  if(!el)return false;',
+'  el.value=val;',
+'  el.dispatchEvent(new Event("input",{bubbles:true}));',
+'  el.dispatchEvent(new Event("change",{bubbles:true}));',
+'  return true;',
+'}',
+
+'function setSelect(id,val){',
+'  const el=document.getElementById(id);',
+'  if(!el)return false;',
+'  el.value=val;',
+'  el.dispatchEvent(new Event("change",{bubbles:true}));',
+'  return true;',
+'}',
+
+'function clickRadio(name,val){',
+'  const el=document.querySelector(`input[type=radio][name="${name}"][value="${val}"]`);',
+'  if(!el)return false;',
+'  el.click();return true;',
+'}',
+
+'function clickMaxRadio(name){',
+'  const radios=[...document.querySelectorAll(`input[type=radio][name="${name}"]`)];',
+'  if(!radios.length)return false;',
+'  radios.reduce((a,b)=>+a.value>=+b.value?a:b).click();',
+'  return true;',
+'}',
+'function clickMinRadio(name){',
+'  const radios=[...document.querySelectorAll(`input[type=radio][name="${name}"]`)];',
+'  if(!radios.length)return false;',
+'  radios.reduce((a,b)=>+a.value<=+b.value?a:b).click();',
+'  return true;',
+'}',
+'function clickMinAllGroups(prefix){',
+'  const names=[...new Set([...document.querySelectorAll(`input[type=radio][name^="${prefix}"]`)].map(r=>r.name))];',
+'  log("Groupes "+prefix+" : "+names.length+" trouvés");',
+'  names.forEach(n=>clickMinRadio(n));',
+'  return names.length;',
+'}',
+
+
+'function fillTextareas(){',
+'  document.querySelectorAll("textarea").forEach(el=>{',
+'    if(el.offsetParent!==null&&!el.value){',
+'      el.value=D.comment;',
+'      el.dispatchEvent(new Event("input",{bubbles:true}));',
+'    }',
+'  });',
+'}',
+
+'function answerAllRadios(){',
+'  const groups={};',
+'  document.querySelectorAll("input[type=radio]").forEach(r=>{',
+'    if(r.offsetParent===null)return;',
+'    (groups[r.name]=groups[r.name]||[]).push(r);',
+'  });',
+'  let n=0;',
+'  Object.entries(groups).forEach(([name,g])=>{',
+'    if(g.some(r=>r.checked))return;',
+'    const nums=g.filter(r=>!isNaN(+r.value));',
+'    if(nums.length)nums.reduce((a,b)=>+a.value>=+b.value?a:b).click();',
+'    else g[g.length-1].click();',
+'    n++;',
+'  });',
+'  return n;',
+'}',
+
+'function next(){',
+'  const btn=document.getElementById("NextButton")||document.getElementById("submitButton");',
+'  if(btn&&!btn.disabled){btn.click();return true;}',
+'  return false;',
+'}',
+
+'function isEnd(){',
+// Ne se baser QUE sur les éléments DOM Qualtrics — jamais sur le texte
+// (le mot "code" apparaît dans d'autres pages et fausse la détection)
+'  if(document.getElementById("EndOfSurvey"))return true;',
+'  if(document.querySelector(".EndOfSurveyContainer,.end-of-survey"))return true;',
+'  return false;',
+'}',
+
+// ── Extraction code : format BK = "Code de validation : JH25014"
+'function extractCode(){',
+'  const endEl=document.getElementById("EndOfSurvey");',
+'  if(!endEl){log("⚠️ #EndOfSurvey introuvable","#f87171");return null;}',
+'  const src=endEl.innerText||endEl.textContent;',
+'  log("Texte EndOfSurvey : "+src.slice(0,300));',
+'  const m1=src.match(/[Cc]ode\\s+de\\s+validation[\\s\u00a0]*[:\\-][\\s\u00a0]*([A-Z0-9]{4,20})/);',
+'  if(m1){log("Code trouvé : "+m1[1]);return m1[1].trim();}',
+'  const m2=src.match(/(?:code|coupon|bon|validation)[^:\\n]{0,30}[:\\-][\\s\u00a0]*([A-Z0-9]{4,20})/i);',
+'  if(m2){log("Code trouvé (2) : "+m2[1]);return m2[1].trim();}',
+'  const m3=src.match(/\\b([A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4})\\b/);',
+'  if(m3){log("Code trouvé (3) : "+m3[1]);return m3[1].trim();}',
+'  const m4=[...src.matchAll(/\\b([A-Z0-9]{5,12})\\b/g)].map(m=>m[1]);',
+'  const code=m4.find(s=>/[A-Z]/.test(s)&&/[0-9]/.test(s));',
+'  if(code){log("Code trouvé (4) : "+code);return code;}',
+'  log("Aucun code dans #EndOfSurvey","#f87171");',
+'  return null;',
+'}',
+
+// ── Overlay résultat final ──────────────────────────────────────
+'function showOverlay(code){',
+'  document.getElementById("__bkov__")?.remove();',
+'  const ov=document.createElement("div");ov.id="__bkov__";',
+'  const codeHtml=code',
+'    ?`<div id="__bkcode__" style="font-family:monospace;font-size:2.2rem;font-weight:900;letter-spacing:.2em;color:#F5EB00;background:#0d0900;border:2px dashed #FF6B00;border-radius:10px;padding:.9rem 2rem;cursor:pointer;user-select:all;display:inline-block;margin:.5rem 0 .4rem;" title="Cliquer pour copier">${code}</div><div style="color:#888;font-size:.72rem;margin-bottom:.5rem;">Cliquer pour copier</div>`',
+'    :`<div style="color:#aaa;font-size:1rem;padding:1rem;">Aucun code d\u00e9tect\u00e9<br><small>V\u00e9rifiez la page manuellement</small></div>`;',
+'  ov.innerHTML=`',
+'    <div style="position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.92);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;">',
+'    <div style="background:#1a1a1a;border:2px solid #FF6B00;border-radius:20px;padding:2.5rem 3rem;max-width:520px;width:90%;text-align:center;box-shadow:0 0 120px rgba(255,107,0,.6);animation:bkpop .4s cubic-bezier(.34,1.56,.64,1) both;">',
+'    <div style="font-size:3rem;margin-bottom:.4rem;">🎟\uFE0F</div>',
+'    <div style="color:#FF6B00;font-size:.7rem;letter-spacing:.2em;font-weight:700;text-transform:uppercase;margin-bottom:.6rem;">Code de r\u00e9duction obtenu</div>',
+'    ${codeHtml}',
+'    <div><button onclick="document.getElementById(\'__bkov__\').remove()" style="margin-top:1.2rem;background:none;border:1px solid #333;color:#777;border-radius:8px;padding:.5rem 1.4rem;cursor:pointer;font-size:.82rem;">Fermer</button></div>',
+'    </div></div>',
+'    <style>@keyframes bkpop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}</style>`;',
+'  document.body.appendChild(ov);',
+'  if(code){',
+'    document.getElementById("__bkcode__")?.addEventListener("click",async()=>{',
+'      try{await navigator.clipboard.writeText(code);}catch(e){window.prompt("Votre code :",code);}',
+'      const el=document.getElementById("__bkcode__");',
+'      if(el){el.style.color="#4ade80";el.style.borderColor="#4ade80";}',
+'    });',
+'  }',
+'}',
+
+// ══════════════════════════════════════════════════════
+// BOUCLE PRINCIPALE
+// ══════════════════════════════════════════════════════
+'log("D\u00e9marrage");',
+'for(let p=0;p<40;p++){',
+'  await wait(200);',
+
+// ── Fin de sondage ──
+'  if(isEnd()){',
+'    PNL.status("🎯 Page finale !","#F5EB00");',
+'    log("Page finale atteinte");',
+'    await wait(400);',
+'    const code=extractCode();',
+'    PNL.done(code);',
+'    showOverlay(code);',
+'    break;',
+'  }',
+
+// ── Page 1 : Numéro de restaurant (QR~QID4) ──
+'  if(document.getElementById("QR~QID4")){',
+'    PNL.status("Page 1/28 — N\u00b0 restaurant");',
+'    log("P1 : saisie restaurant "+D.restaurantId);',
+'    setInput("QR~QID4",D.restaurantId);',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 2 : Date / Heure / Période ──
+'  if(document.getElementById("QR~QID118~2")){',
+'    PNL.status("Page 2/28 — Date / Heure / P\u00e9riode");',
+'    log("P2 : date="+D.visitDate+" h="+D.visitHour+" min="+D.visitMin+" per="+D.period);',
+'    setInput("QR~QID118~2",D.visitDate);',
+'    setSelect("QR~QID8#1~1",D.visitHour);',
+'    setSelect("QR~QID8#2~1",D.visitMin);',
+'    setSelect("QR~QID8#3~1",D.period);',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 3 : Mode de commande (QR~QID12) ──
+'  if(document.querySelector(`input[name="QR~QID12"]`)){',
+'    PNL.status("Page 3/28 — Mode de commande");',
+'    log("P3 : mode commande → val 1");',
+'    clickRadio("QR~QID12","1");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 4 : Réception commande (QR~QID14) ──
+'  if(document.querySelector(`input[name="QR~QID14"]`)){',
+'    PNL.status("Page 4/28 — R\u00e9ception commande");',
+'    log("P4 : r\u00e9ception → val 2");',
+'    clickRadio("QR~QID14","2");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 5 : Satisfaction globale (QR~QID18, val 17-21) ──
+'  if(document.querySelector(`input[name="QR~QID18"]`)){',
+'    PNL.status("Page 5/28 — Satisfaction globale");',
+'    log("P5 : satisfaction globale → max");',
+'    clickMinRadio("QR~QID18");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 6 : Commentaire texte (textarea, pas de radio) ──
+'  if(!document.querySelector("input[type=radio]")&&document.querySelector("textarea")){',
+'    PNL.status("Page 6/28 — Commentaire texte");',
+'    log("P6 : commentaire libre");',
+'    fillTextareas();',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 7 : Satisfaction service (QR~QID121) ──
+'  if(document.querySelector(`input[name^="QR~QID121"]`)){',
+'    PNL.status("Page 7/28 — Satisfaction service");',
+    '    log("P7 : service → min Très satisfait sur tous groupes");',
+    '    clickMinAllGroups("QR~QID121~");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 8 : Propreté (QR~QID123) ──
+'  if(document.querySelector(`input[name^="QR~QID123"]`)){',
+'    PNL.status("Page 8/28 — Propret\u00e9");',
+    '    log("P8 : propreté → min Très satisfait sur tous groupes");',
+    '    clickMinAllGroups("QR~QID123~");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 9 : Hygiène (QR~QID122) ──
+'  if(document.querySelector(`input[name="QR~QID122"]`)){',
+'    PNL.status("Page 9/28 — Hygi\u00e8ne");',
+'    log("P9 : hygi\u00e8ne → max");',
+'    clickMinRadio("QR~QID122");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 10 : Nourriture (QR~QID21) ──
+'  if(document.querySelector(`input[name^="QR~QID21~"]`)){',
+'    PNL.status("Page 10/28 — Nourriture");',
+    '    log("P10 : nourriture → min Très satisfait sur tous groupes");',
+    '    clickMinAllGroups("QR~QID21~");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 11 : Satisfaction générale matrix (QR~QID22) ──
+'  if(document.querySelector(`input[name^="QR~QID22~"]`)){',
+'    PNL.status("Page 11/28 — Satisfaction g\u00e9n\u00e9rale");',
+    '    log("P11 : sat générale → min Très satisfait sur tous groupes");',
+    '    clickMinAllGroups("QR~QID22~");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 12 : Problèmes ? (QR~QID38) → NON = val 2 ──
+'  if(document.querySelector(`input[name="QR~QID38"]`)){',
+'    PNL.status("Page 12/28 — Probl\u00e8mes ?");',
+'    log("P12 : probl\u00e8mes → NON (val 2)");',
+'    clickRadio("QR~QID38","2");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 13 : Recommandation (QR~QID41) ──
+'  if(document.querySelector(`input[name^="QR~QID41~"]`)){',
+'    PNL.status("Page 13/28 — Recommandation");',
+'    log("P13 : recommandation → max");',
+'    ["QR~QID41~1","QR~QID41~2"].forEach(n=>clickMaxRadio(n));',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 14 : Articles commandés (QR~QID46, checkboxes) ──
+'  if(document.querySelector(`input[name^="QR~QID46~"]`)){',
+'    PNL.status("Page 14/28 — Articles command\u00e9s");',
+'    log("P14 : articles → 1er checkbox");',
+'    const cb=document.querySelector(`input[type=checkbox][name^="QR~QID46~"]`);',
+'    if(cb&&!cb.checked)cb.click();',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 15 : Accompagnements (QR~QID47, checkboxes) ──
+'  if(document.querySelector(`input[name^="QR~QID47~"]`)){',
+'    PNL.status("Page 15/28 — Accompagnements");',
+'    log("P15 : accompagnements → 1er checkbox");',
+'    const cb=document.querySelector(`input[type=checkbox][name^="QR~QID47~"]`);',
+'    if(cb&&!cb.checked)cb.click();',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 17 : Satisfaction article spécifique (QR~QID48) ──
+'  if(document.querySelector(`input[name="QR~QID48"]`)){',
+'    PNL.status("Page 17/28 — Satisfaction article");',
+'    log("P17 : article → max");',
+'    clickMinRadio("QR~QID48");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 18 : Détail article matrix (QR~QID49) ──
+'  if(document.querySelector(`input[name^="QR~QID49~"]`)){',
+'    PNL.status("Page 18/28 — D\u00e9tail article");',
+    '    log("P18 : détail article → min Très satisfait sur tous groupes");',
+    '    clickMinAllGroups("QR~QID49~");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 19 : Rachèterez-vous ? (QR~QID50) ──
+'  if(document.querySelector(`input[name="QR~QID50"]`)){',
+'    PNL.status("Page 19/28 — Rachat");',
+'    log("P19 : rachat → max (val 5)");',
+'    clickMaxRadio("QR~QID50");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 21 : Nb personnes (QR~QID55) ──
+'  if(document.querySelector(`input[name="QR~QID55"]`)){',
+'    PNL.status("Page 21/28 — Nb personnes");',
+'    log("P21 : nb personnes → 2");',
+'    clickRadio("QR~QID55","2");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 22 : Personnalisation burger (QR~QID57) → NON ──
+'  if(document.querySelector(`input[name="QR~QID57"]`)){',
+'    PNL.status("Page 22/28 — Personnalisation");',
+'    log("P22 : personnalisation → NON (val 2)");',
+'    clickRadio("QR~QID57","2");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 23 : Fréquence BK (QR~QID60) ──
+'  if(document.querySelector(`input[name="QR~QID60"]`)){',
+'    PNL.status("Page 23/28 — Fr\u00e9quence BK");',
+'    log("P23 : fr\u00e9quence BK → val 4");',
+'    clickRadio("QR~QID60","4");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 24 : Fréquence fast-food (QR~QID61) ──
+'  if(document.querySelector(`input[name="QR~QID61"]`)){',
+'    PNL.status("Page 24/28 — Fr\u00e9quence fast-food");',
+'    log("P24 : fr\u00e9quence fast-food → val 4");',
+'    clickRadio("QR~QID61","4");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 25 : Raison de visite (QR~QID62) ──
+'  if(document.querySelector(`input[name="QR~QID62"]`)){',
+'    PNL.status("Page 25/28 — Raison de visite");',
+'    log("P25 : raison → val 1");',
+'    clickRadio("QR~QID62","1");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 26 : Enseigne préférée (QR~QID111) → BK = val 1 ──
+'  if(document.querySelector(`input[name="QR~QID111"]`)){',
+'    PNL.status("Page 26/28 — Enseigne pr\u00e9f\u00e9r\u00e9e");',
+'    log("P26 : enseigne → BK (val 1)");',
+'    clickRadio("QR~QID111","1");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 27 : Sexe (QR~QID65, facultatif) ──
+'  if(document.querySelector(`input[name="QR~QID65"]`)){',
+'    PNL.status("Page 27/28 — Sexe (facultatif)");',
+'    log("P27 : sexe → val 1");',
+'    clickRadio("QR~QID65","1");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── Page 28 : Âge (QR~QID66, facultatif) ──
+'  if(document.querySelector(`input[name="QR~QID66"]`)){',
+'    PNL.status("Page 28/28 — \u00c2ge (facultatif)");',
+'    log("P28 : \u00e2ge → val 3");',
+'    clickRadio("QR~QID66","3");',
+'    await wait(200);next();await wait(500);continue;',
+'  }',
+
+// ── FALLBACK : page non reconnue ──
+'  const nbR=answerAllRadios();',
+'  fillTextareas();',
+'  const cbFb=document.querySelector("input[type=checkbox]:not(:checked)");',
+'  if(cbFb)cbFb.click();',
+'  PNL.status("Page "+p+" — fallback ("+nbR+" r\u00e9ponses)","#aaa");',
+'  log("Fallback p"+p+" : "+nbR+" radios","#aaa");',
+'  await wait(400);',
+'  if(!next()){',
+'    await wait(400);',
+'    if(isEnd()){const c=extractCode();PNL.done(c);showOverlay(c);}',
+'    else{PNL.status("\u26a0\uFE0F Bloqu\u00e9 page "+p,"#f87171");log("Bouton Next introuvable","#f87171");}',
+'    break;',
+'  }',
+'  await wait(1200);',
+'}',
+'log("Script termin\u00e9.");',
+'})();'
+  ].join('\n');
+}
+
+let _script = '';
+const QURL = 'https://rbixm.qualtrics.com/jfe/form/SV_9MHgHFvPm0OEHr0?CountryCode=FRA&Q_Language=FR&PT=1';
+
+function generate() {
+  const t = new Date();
+  const cfg = {
+    restaurantId: document.getElementById('cfg-resto').value || '23416',
+    visitDate:    document.getElementById('cfg-date').value  || (String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+'/'+t.getFullYear()),
+    visitHour:    document.getElementById('cfg-hour').value,
+    visitMin:     document.getElementById('cfg-min').value,
+    period:       selectedPeriod,
+    comment:      document.getElementById('cfg-comment').value,
+  };
+  _script = buildScript(cfg);
+  document.getElementById('bookmarklet-link').href = 'javascript:' + encodeURIComponent(_script);
+  document.getElementById('code-preview').textContent = _script;
+  document.getElementById('card-bookmark').style.display = '';
+  document.getElementById('card-console').style.display  = '';
+  document.getElementById('result-hint').style.display   = 'block';
+  // Activer le bouton Lancer
+  const lb = document.getElementById('btn-launch');
+  lb.disabled = false;
+  lb.classList.add('ready');
+}
+
+async function launch() {
+  if (!_script) return;
+  // Ouvrir Qualtrics dans un nouvel onglet
+  window.open(QURL, '_blank');
+  // Copier le script dans le presse-papier
+  try { await navigator.clipboard.writeText(_script); } catch(e) {}
+  // Afficher overlay avec instructions claires
+  document.getElementById('__launch_ov__')?.remove();
+  const ov = document.createElement('div');
+  ov.id = '__launch_ov__';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-family:sans-serif;';
+  // Récupérer le href du bookmarklet
+  const bmHref = document.getElementById('bookmarklet-link')?.href || '#';
+  ov.innerHTML = `
+    <div style="background:#1a1a1a;border:2px solid #FF6B00;border-radius:20px;padding:2rem 2.5rem;max-width:500px;width:92%;text-align:center;box-shadow:0 0 80px rgba(255,107,0,.4);animation:bkpop2 .35s cubic-bezier(.34,1.56,.64,1) both;">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">🚀</div>
+      <div style="color:#FF6B00;font-size:.7rem;letter-spacing:.2em;font-weight:700;text-transform:uppercase;margin-bottom:1.2rem">Qualtrics est ouvert</div>
+
+      <div style="background:#111;border:1.5px solid #2a2a2a;border-radius:12px;padding:1.2rem;margin-bottom:1rem;">
+        <div style="color:#F5EB00;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.8rem">✨ MÉTHODE RAPIDE — 1 clic</div>
+        <div style="color:#aaa;font-size:.82rem;margin-bottom:.8rem">Glissez ce bouton dans votre barre de favoris<br><span style="color:#666;font-size:.75rem">(à faire une seule fois)</span></div>
+        <a id="__bm_launch__" href="${bmHref}" draggable="true"
+          style="display:inline-block;background:linear-gradient(135deg,#F5EB00,#FF6B00);color:#111;font-weight:800;font-size:1rem;padding:.6rem 1.5rem;border-radius:8px;text-decoration:none;cursor:grab;letter-spacing:.05em;">
+          🍔 BK AutoFill
+        </a>
+        <div style="color:#555;font-size:.72rem;margin-top:.6rem">Puis cliquez dessus depuis la page Qualtrics</div>
+      </div>
+
+      <div style="color:#444;font-size:.75rem;margin:.8rem 0;display:flex;align-items:center;gap:.5rem;justify-content:center;">
+        <div style="flex:1;height:1px;background:#2a2a2a"></div> ou <div style="flex:1;height:1px;background:#2a2a2a"></div>
+      </div>
+
+      <div style="background:#111;border:1.5px solid #2a2a2a;border-radius:12px;padding:1rem;margin-bottom:1.2rem;">
+        <div style="color:#aaa;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.6rem">MÉTHODE CONSOLE</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:.5rem;flex-wrap:wrap;">
+          <span style="background:#222;border:1px solid #333;border-radius:6px;padding:.3rem .7rem;color:#F5EB00;font-family:monospace;font-size:.9rem;">F12</span>
+          <span style="color:#555">→</span>
+          <span style="background:#222;border:1px solid #333;border-radius:6px;padding:.3rem .7rem;color:#F5EB00;font-family:monospace;font-size:.9rem;">Console</span>
+          <span style="color:#555">→</span>
+          <span style="background:#222;border:1px solid #333;border-radius:6px;padding:.3rem .7rem;color:#F5EB00;font-family:monospace;font-size:.9rem;">Ctrl+V</span>
+          <span style="color:#555">→</span>
+          <span style="background:#222;border:1px solid #333;border-radius:6px;padding:.3rem .7rem;color:#F5EB00;font-family:monospace;font-size:.9rem;">Entrée</span>
+        </div>
+        <div style="color:#3a3a3a;font-size:.72rem;margin-top:.5rem">Le script est déjà copié dans votre presse-papier</div>
+      </div>
+
+      <button onclick="document.getElementById('__launch_ov__').remove()"
+        style="background:none;border:1px solid #2a2a2a;color:#555;border-radius:8px;padding:.5rem 1.4rem;cursor:pointer;font-size:.8rem;">
+        Fermer
+      </button>
+    </div>
+    <style>@keyframes bkpop2{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}</style>
+  `;
+  document.body.appendChild(ov);
+}
+
+async function copyCode() {
+  const code = document.getElementById('code-preview').textContent;
+  try {
+    await navigator.clipboard.writeText(code);
+    const btn = document.getElementById('btn-copy');
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> Copié !';
+    setTimeout(()=>{
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copier le script';
+    }, 2500);
+  } catch { alert('Copiez manuellement.'); }
+}
+
+const now = new Date();
+document.getElementById('cfg-date').value =
+  String(now.getDate()-1).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+</script>
+</body>
+</html>
